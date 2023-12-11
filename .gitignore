@@ -1,0 +1,6 @@
+*.o
+*.d
+/tayracer
+
+.ccls-cache/
+compile_commands.json
