@@ -6,7 +6,7 @@ out vec4 color;
 
 uniform mat4 affine;
 
-const vec4 cam_pos = vec4(0., 0., -2500., 1.);
+const float near_clip = 1000.;
 const float max_dist = 50000.;
 const float min_dist = .5;
 
@@ -41,16 +41,16 @@ float dfs(vec3 pos) {
 
 void main() {
     vec4 p = ratio > 1
-        ? 500*vec4(npos.x*ratio, npos.y, 0., 1./500.)
-        : 500*vec4(npos.x, npos.y/ratio, 0., 1./500.);
-
-    vec4 d = vec4(normalize(p.xyz - cam_pos.xyz), 1.);
-
-    d = affine*d;
-    d /= d.w;
+        ? vec4(npos.x*ratio, npos.y, near_clip, 1.)
+        : vec4(npos.x, npos.y/ratio, near_clip, 1.);
+    p.xy *= 500;
 
     p = affine*p;
     p /= p.w;
+    vec4 cam = affine[3];
+    cam /= cam.w;
+
+    vec4 d = vec4(normalize(p.xyz - cam.xyz), 1.);
 
     float D, min_D = max_dist;
     while((D = dfs(p.xyz)) < max_dist && D >= min_dist) {

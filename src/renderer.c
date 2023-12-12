@@ -8,6 +8,8 @@
 #include <math.h>
 #include "linmath.h"
 
+#define CLAMP(x, m, M) ((x)<(m)?(m):(x)>(M)?(M):(x))
+
 typedef struct vertex {
     float x, y;
 } vertex_t;
@@ -61,29 +63,41 @@ void renderer_init(__unused state_t *s) {
                           sizeof(vertex_t), (void *)0);
 }
 
+static void move_camera(float *x, float *z, float y_angle, float delta) {
+    *x += delta * cosf(y_angle);
+    *z += delta * -sinf(y_angle);
+}
+
 void renderer_fixed_update(__unused state_t *s, __unused double dt) {
-    const float delta = 0.01, delta_s = 0.1;
+    const float adelta = 0.01, adelta_s = 0.03,
+                delta = 10, delta_s = 50;
     uint8_t mod;
     if(key_pressed(s, GLFW_KEY_W, &mod))
-        z += mod & GLFW_MOD_SHIFT ? delta_s : delta;
+        move_camera(&x, &z, y_angle - M_PI_2,
+                    mod & GLFW_MOD_SHIFT ? delta_s : delta);
     if(key_pressed(s, GLFW_KEY_A, &mod))
-        x -= mod & GLFW_MOD_SHIFT ? delta_s : delta;
+        move_camera(&x, &z, y_angle + M_PI,
+                    mod & GLFW_MOD_SHIFT ? delta_s : delta);
     if(key_pressed(s, GLFW_KEY_S, &mod))
-        z -= mod & GLFW_MOD_SHIFT ? delta_s : delta;
+        move_camera(&x, &z, y_angle + M_PI_2,
+                    mod & GLFW_MOD_SHIFT ? delta_s : delta);
     if(key_pressed(s, GLFW_KEY_D, &mod))
-        x += mod & GLFW_MOD_SHIFT ? delta_s : delta;
+        move_camera(&x, &z, y_angle,
+                    mod & GLFW_MOD_SHIFT ? delta_s : delta);
     if(key_pressed(s, GLFW_KEY_SPACE, &mod))
         y += mod & GLFW_MOD_SHIFT ? delta_s : delta;
     if(key_pressed(s, GLFW_KEY_C, &mod))
         y -= mod & GLFW_MOD_SHIFT ? delta_s : delta;
     if(key_pressed(s, GLFW_KEY_RIGHT, &mod))
-        y_angle += mod & GLFW_MOD_SHIFT ? delta_s : delta;
+        y_angle += mod & GLFW_MOD_SHIFT ? adelta_s : adelta;
     if(key_pressed(s, GLFW_KEY_LEFT, &mod))
-        y_angle -= mod & GLFW_MOD_SHIFT ? delta_s : delta;
+        y_angle -= mod & GLFW_MOD_SHIFT ? adelta_s : adelta;
     if(key_pressed(s, GLFW_KEY_UP, &mod))
-        x_angle -= mod & GLFW_MOD_SHIFT ? delta_s : delta;
+        x_angle -= mod & GLFW_MOD_SHIFT ? adelta_s : adelta;
     if(key_pressed(s, GLFW_KEY_DOWN, &mod))
-        x_angle += mod & GLFW_MOD_SHIFT ? delta_s : delta;
+        x_angle += mod & GLFW_MOD_SHIFT ? adelta_s : adelta;
+
+    x_angle = CLAMP(x_angle, -M_PI_2, M_PI_2);
 }
 
 void renderer_update(state_t *s, __unused double dt) {
