@@ -14,8 +14,18 @@
 
 #define TICK_TIME (1.0/60.0)
 
+state_t s;
+
 void glfw_error_callback(int err, const char *desc) {
     fprintf(stderr, "[GLFW Error] %d: %s\n", err, desc);
+}
+
+void glfw_key_callback(__unused GLFWwindow *w, int key, __unused int scancode,
+                       int action, int mode) {
+    if(action == GLFW_PRESS || action == GLFW_REPEAT)
+        s.input.key_press[key] = mode ? mode : 0x80;
+    else if(action == GLFW_RELEASE)
+        s.input.key_press[key] = 0x00;
 }
 
 uint8_t render_loop_on = 1;
@@ -71,7 +81,6 @@ int main(int argc, char *argv[]) {
     chdir_exe_path(argc, argv);
 
     pthread_t render_thread;
-    state_t s;
 
     glfwSetErrorCallback(&glfw_error_callback);
     if(!glfwInit())
@@ -84,6 +93,7 @@ int main(int argc, char *argv[]) {
     }
 
     glfwMakeContextCurrent(s.win);
+    glfwSetKeyCallback(s.win, glfw_key_callback);
     glfwSwapInterval(0);
 
     glewExperimental = GL_TRUE;

@@ -4,7 +4,9 @@ uniform float ratio;
 in vec2 npos;
 out vec4 color;
 
-const vec3 cam_pos = vec3(0., 0., -2500.);
+uniform mat4 affine;
+
+const vec4 cam_pos = vec4(0., 0., -2500., 1.);
 const float max_dist = 50000.;
 const float min_dist = .5;
 
@@ -38,16 +40,22 @@ float dfs(vec3 pos) {
 }
 
 void main() {
-    vec3 p = ratio > 1
-        ? 500*vec3(npos.x*ratio, npos.y, 0.)
-        : 500*vec3(npos.x, npos.y/ratio, 0.);
+    vec4 p = ratio > 1
+        ? 500*vec4(npos.x*ratio, npos.y, 0., 1./500.)
+        : 500*vec4(npos.x, npos.y/ratio, 0., 1./500.);
 
-    vec3 d = normalize(p - cam_pos);
+    vec4 d = vec4(normalize(p.xyz - cam_pos.xyz), 1.);
+
+    d = affine*d;
+    d /= d.w;
+
+    p = affine*p;
+    p /= p.w;
 
     float D, min_D = max_dist;
-    while((D = dfs(p)) < max_dist && D >= min_dist) {
+    while((D = dfs(p.xyz)) < max_dist && D >= min_dist) {
         min_D = min(D, min_D);
-        p += D*d;
+        p.xyz += D*d.xyz;
     }
 
     vec4 sphere_col = spheres[closest].col;

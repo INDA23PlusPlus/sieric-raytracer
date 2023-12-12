@@ -25,9 +25,21 @@ GLubyte vert_indices[6] = {
 };
 
 GLuint vbo, ibo, program;
-GLint pos_loc, ratio_loc;
+GLint pos_loc, ratio_loc, affine_loc;
+
+mat4x4 trans, affine;
+float x, y, z, y_angle, x_angle;
+
+static uint8_t key_pressed(state_t *s, int key, uint8_t *mod) {
+    if(key > GLFW_KEY_LAST || key < 0) return 0;
+    uint8_t *k = s->input.key_press+key;
+    if(mod) *mod = *k & ~0x80;
+    return *k;
+}
 
 void renderer_init(__unused state_t *s) {
+    x = y = z = y_angle = x_angle = 0.f;
+
     glGenBuffers(1, &vbo);
     glBindBuffer(GL_ARRAY_BUFFER, vbo);
     glBufferData(GL_ARRAY_BUFFER, sizeof verts, verts, GL_STATIC_DRAW);
@@ -42,6 +54,7 @@ void renderer_init(__unused state_t *s) {
 
     pos_loc = glGetAttribLocation(program, "pos");
     ratio_loc = glGetUniformLocation(program, "ratio");
+    affine_loc = glGetUniformLocation(program, "affine");
 
     glEnableVertexAttribArray(pos_loc);
     glVertexAttribPointer(pos_loc, 2, GL_FLOAT, GL_FALSE,
@@ -49,12 +62,38 @@ void renderer_init(__unused state_t *s) {
 }
 
 void renderer_fixed_update(__unused state_t *s, __unused double dt) {
-    return;
+    const float delta = 0.01, delta_s = 0.1;
+    uint8_t mod;
+    if(key_pressed(s, GLFW_KEY_W, &mod))
+        z += mod & GLFW_MOD_SHIFT ? delta_s : delta;
+    if(key_pressed(s, GLFW_KEY_A, &mod))
+        x -= mod & GLFW_MOD_SHIFT ? delta_s : delta;
+    if(key_pressed(s, GLFW_KEY_S, &mod))
+        z -= mod & GLFW_MOD_SHIFT ? delta_s : delta;
+    if(key_pressed(s, GLFW_KEY_D, &mod))
+        x += mod & GLFW_MOD_SHIFT ? delta_s : delta;
+    if(key_pressed(s, GLFW_KEY_SPACE, &mod))
+        y += mod & GLFW_MOD_SHIFT ? delta_s : delta;
+    if(key_pressed(s, GLFW_KEY_C, &mod))
+        y -= mod & GLFW_MOD_SHIFT ? delta_s : delta;
+    if(key_pressed(s, GLFW_KEY_RIGHT, &mod))
+        y_angle += mod & GLFW_MOD_SHIFT ? delta_s : delta;
+    if(key_pressed(s, GLFW_KEY_LEFT, &mod))
+        y_angle -= mod & GLFW_MOD_SHIFT ? delta_s : delta;
+    if(key_pressed(s, GLFW_KEY_UP, &mod))
+        x_angle -= mod & GLFW_MOD_SHIFT ? delta_s : delta;
+    if(key_pressed(s, GLFW_KEY_DOWN, &mod))
+        x_angle += mod & GLFW_MOD_SHIFT ? delta_s : delta;
 }
 
 void renderer_update(state_t *s, __unused double dt) {
+    mat4x4_translate(trans, x, y, z);
+    mat4x4_rotate_Y(affine, trans, y_angle);
+    mat4x4_rotate_X(affine, affine, x_angle);
+
     glUseProgram(program);
     glUniform1f(ratio_loc, s->ratio);
+    glUniformMatrix4fv(affine_loc, 1, GL_FALSE, (const GLfloat *)affine);
     glDrawElements(GL_TRIANGLES, sizeof vert_indices, GL_UNSIGNED_BYTE,
                    (void *)0);
 }
