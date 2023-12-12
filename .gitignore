@@ -1,6 +1,7 @@
 *.o
 *.d
 /tayracer
+/pre/
 
 .ccls-cache/
 compile_commands.json
