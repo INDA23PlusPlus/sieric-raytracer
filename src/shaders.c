@@ -11,7 +11,7 @@ static GLuint shaders_load_file(const char *path, GLenum type) {
     char *code, *log;
 
     if(data_file_to_buf(&code, path) < 0) {
-        perror("[Shader ERR] vertex shader");
+        perror("[Shader ERR] load file");
         return -1;
     }
 

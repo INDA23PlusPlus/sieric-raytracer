@@ -27,5 +27,6 @@ ssize_t data_file_to_buf(char **buf, const char *path) {
     *buf = malloc(sz + 1);
     fread(*buf, sizeof(char), sz, f);
     (*buf)[sz] = '\0';
+    fclose(f);
     return sz + 1;
 }

@@ -1,3 +1,4 @@
+#include <stdlib.h>
 #include <stdio.h>
 #include <unistd.h>
 
@@ -56,11 +57,10 @@ void *render_loop(void *arg) {
 static void chdir_exe_path(__unused int argc, __unused char *argv[]) {
     char buf[1024];
 #if _OS == _OS_Linux
-    readlink("/proc/self/exe", buf, sizeof buf);
-    int16_t i;
-    for(i = 1023; i >= 0; --i)
-        if(buf[i] == '/') break;
-    buf[i] = '\0';
+    ssize_t sz = readlink("/proc/self/exe", buf, sizeof buf);
+    if(sz < 0) perror("readlink"), exit(1);
+    for(; sz >= 0 && buf[sz] != '/'; --sz);
+    buf[sz] = '\0';
     chdir(buf);
 #else
 # error Unsupported operating system
